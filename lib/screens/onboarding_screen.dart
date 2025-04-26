@@ -47,8 +47,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.ease,
       );
     } else {
-      // TODO: Navigate to the main app or home screen
-      Navigator.of(context).pop();
+      Navigator.pushReplacementNamed(context, '/authentication');
     }
   }
 

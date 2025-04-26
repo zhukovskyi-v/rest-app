@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 
+import 'screens/auth_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/theme.dart';
 
@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
         // '/': (context) => const MyHomePage(title: 'Breakly',),
         // '/onboarding': (context) => const OnboardingScreen(),
         '/': (context) => const OnboardingScreen(),
+        '/authentication': (context) => const AuthScreen(),
       },
     );
   }
