@@ -8,9 +8,21 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFF0B0B0C),
       fontFamily: 'Inter',
       textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
-        titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        headlineLarge: TextStyle(
+          fontSize: 32,
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 18,
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 16,
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
         displayLarge: TextStyle(
           fontSize: 48,
           fontWeight: FontWeight.bold,
@@ -26,6 +38,7 @@ class AppTheme {
         primary: Color(0xFF00FFC8),
         secondary: Color(0xFF7A00FF),
         surface: Colors.white,
+        inverseSurface: Colors.black,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF0B0B0C),
@@ -50,9 +63,21 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.white,
       fontFamily: 'Inter',
       textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
-        titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        headlineLarge: TextStyle(
+          fontSize: 32,
+          color: Colors.black,
+          fontWeight: FontWeight.w700,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 18,
+          color: Colors.black,
+          fontWeight: FontWeight.w600,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 16,
+          color: Colors.black,
+          fontWeight: FontWeight.w500,
+        ),
         displayLarge: TextStyle(
           fontSize: 48,
           fontWeight: FontWeight.bold,
@@ -68,6 +93,7 @@ class AppTheme {
         primary: Color(0xFF00FFC8),
         secondary: Color(0xFF7A00FF),
         surface: Colors.white,
+        inverseSurface: Colors.white,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,

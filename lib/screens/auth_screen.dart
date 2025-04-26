@@ -1,5 +1,9 @@
+import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/enums.dart';
+import 'package:breakly/appwrite/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -9,6 +13,54 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  showAlert({required String title, required String text}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.inverseSurface,
+          title: Text(title),
+          content: Text(text),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.inverseSurface,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Ok'),
+            ),
+          ],
+
+        );
+      },
+    );
+  }
+
+  onAuth() async {
+    try {
+      context.read<AuthAPI>().signInWithProvider(
+        provider: OAuthProvider.google,
+      );
+    } on AppwriteException catch (e) {
+      showAlert(title: 'Login failed', text: e.message.toString());
+    }
+  }
+
+  onAuthAnonymous() async {
+    try {
+      await context.read<AuthAPI>().signInWithAnonymous();
+      Navigator.pushReplacementNamed(context, '/home');
+    } on AppwriteException catch (e) {
+      showAlert(title: 'Login failed', text: e.message.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -69,9 +121,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: () {
-                    // TODO: Implement Google sign-in logic
-                  },
+                  onPressed: onAuth,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -93,6 +143,24 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ),
               ),
+            ),
+            const SizedBox(height: 32),
+            // Sign Up Link
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Don't have an account? ", style: textTheme.bodyMedium),
+                GestureDetector(
+                  onTap: onAuthAnonymous,
+                  child: Text(
+                    'Sign in as Guest',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.surface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
             // Sign Up Link
           ],
