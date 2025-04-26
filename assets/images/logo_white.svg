@@ -1,0 +1,19 @@
+<svg width="512" height="700" viewBox="0 0 512 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00F5FF" />
+            <stop offset="100%" stop-color="#B800FF" />
+        </linearGradient>
+        <filter id="textShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="black" flood-opacity="0.4"/>
+        </filter>
+    </defs>
+
+    <!-- Gradient circle -->
+    <circle cx="256" cy="256" r="200" stroke="url(#gradient)" stroke-width="20" fill="none" />
+
+    <!-- Text with shadow -->
+    <text x="50%" y="600" text-anchor="middle" font-family="Poppins, Inter, sans-serif" font-size="80" font-weight="700" fill="white" filter="url(#textShadow)">
+        Breakly
+    </text>
+</svg>
