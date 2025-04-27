@@ -5,7 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'constants/constants.dart';
 import 'screens/auth_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -36,6 +37,9 @@ Future<void> main() async {
   await Future.wait([
     flutterLocalNotificationsPlugin.initialize(initializationSettings),
     Supabase.initialize(url: SUPABASE_URL, anonKey: SUPABASE_TOKEN),
+    Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    )
   ]);
   runApp(
     MultiProvider(

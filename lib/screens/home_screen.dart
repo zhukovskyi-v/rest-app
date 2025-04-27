@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
     );
 
     await flutterLocalNotificationsPlugin.show(
-      0, // id сповіщення (можеш будь-яке число дати)
+      0,
       'Одразу сповіщення 🔥',
       'Це миттєве сповіщення!',
       notificationDetails,
@@ -39,7 +39,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> scheduleNotification() async {
-    // Питаємо permission
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
