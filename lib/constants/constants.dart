@@ -1,8 +1,9 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-const String APPWRITE_PROJECT_ID = "665c956800100dc3f602";
-const String APPWRITE_DATABASE_ID = "680cdecf0029d174e1cb";
-const String APPWRITE_URL = "https://cloud.appwrite.io/v1";
-const String COLLECTION_MESSAGES = "";
+const String SUPABASE_URL = "https://kelqzjiswmnhizhwsvix.supabase.co";
+const String SUPABASE_TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlbHF6amlzd21uaGl6aHdzdml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxMzE3MDcsImV4cCI6MjA2MDcwNzcwN30.mv877aTEfbtaGTRdACmS4LapVnl6g5yUhInTL2t3myE";
+const String GOOGLE_WEB_CLIENT_ID = "37931616456-nlfb3uq4ub8qapq8qv9jq5sbmk6bora3.apps.googleusercontent.com";
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();

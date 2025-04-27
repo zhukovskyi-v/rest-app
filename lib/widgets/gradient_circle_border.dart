@@ -16,13 +16,29 @@ class GradientCircleBorder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    return Container(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: GradientBorderPainter(
-          borderWidth: borderWidth,
-          gradientColors: gradientColors,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(width: borderWidth, color: Colors.transparent),
+        gradient: SweepGradient(
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.8),
+            colorScheme.secondary,
+            colorScheme.primary.withValues(alpha: 0.8),
+          ],
+          startAngle: 0.0,
+          endAngle: 3.14 * 2,
+        ),
+      ),
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          shape: BoxShape.circle,
         ),
       ),
     );

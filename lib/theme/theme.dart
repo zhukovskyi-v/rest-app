@@ -92,7 +92,7 @@ class AppTheme {
       colorScheme: const ColorScheme.light(
         primary: Color(0xFF00FFC8),
         secondary: Color(0xFF7A00FF),
-        surface: Colors.white,
+        surface: Colors.black,
         inverseSurface: Colors.white,
       ),
       appBarTheme: const AppBarTheme(

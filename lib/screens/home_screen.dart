@@ -1,9 +1,8 @@
-import 'package:breakly/appwrite/auth_api.dart';
 import 'package:breakly/constants/constants.dart';
+import 'package:breakly/service/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class HomeScreen extends StatelessWidget {
@@ -97,7 +96,7 @@ class HomeScreen extends StatelessWidget {
         child: Text(
           'Logout',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onTertiary,
+            color: Theme.of(context).colorScheme.inverseSurface,
           ),
         ),
       ),

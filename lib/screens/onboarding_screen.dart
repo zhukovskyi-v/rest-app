@@ -21,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Welcome to\nBreakly',
       description:
           'An app designed to remind you to take regular breaks from your computer work.',
-      image: GradientCircleBorder(),
+      image: GradientCircleBorder(size: 180, borderWidth: 3),
       buttonText: 'Next',
     ),
     OnboardingPageData(

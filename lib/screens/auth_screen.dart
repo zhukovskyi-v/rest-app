@@ -1,6 +1,5 @@
-import 'package:appwrite/appwrite.dart';
-import 'package:appwrite/enums.dart';
-import 'package:breakly/appwrite/auth_api.dart';
+import 'package:breakly/service/auth_api.dart';
+import 'package:breakly/widgets/gradient_circle_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -36,29 +35,26 @@ class _AuthScreenState extends State<AuthScreen> {
               child: const Text('Ok'),
             ),
           ],
-
         );
       },
     );
   }
 
   onAuth() async {
-    try {
-      context.read<AuthAPI>().signInWithProvider(
-        provider: OAuthProvider.google,
-      );
-    } on AppwriteException catch (e) {
-      showAlert(title: 'Login failed', text: e.message.toString());
-    }
+    // try {
+    await context.read<AuthAPI>().signInWithGoogle();
+    Navigator.pushReplacementNamed(context, '/home');
+    // } catch (e) {
+    //   showAlert(title: 'Login failed', text: e.message.toString());
   }
 
   onAuthAnonymous() async {
-    try {
-      await context.read<AuthAPI>().signInWithAnonymous();
-      Navigator.pushReplacementNamed(context, '/home');
-    } on AppwriteException catch (e) {
-      showAlert(title: 'Login failed', text: e.message.toString());
-    }
+    // try {
+    await context.read<AuthAPI>().signInWithAnonymous();
+    Navigator.pushReplacementNamed(context, '/home');
+    // } catch (e) {
+    //   showAlert(title: 'Login failed', text: e.message.toString());
+    // }
   }
 
   @override
@@ -73,33 +69,8 @@ class _AuthScreenState extends State<AuthScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Gradient Circle
-            Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(width: 8, color: Colors.transparent),
-                gradient: SweepGradient(
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.8),
-                    colorScheme.secondary,
-                    colorScheme.primary.withValues(alpha: 0.8),
-                  ],
-                  startAngle: 0.0,
-                  endAngle: 3.14 * 2,
-                ),
-              ),
-              child: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
+            GradientCircleBorder(size: 180, borderWidth: 3),
             const SizedBox(height: 48),
-            // Sign In Text
             Text(
               'Sign In',
               style: textTheme.displayLarge?.copyWith(letterSpacing: 1.2),

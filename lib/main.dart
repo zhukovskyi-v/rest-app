@@ -1,17 +1,16 @@
 import 'package:breakly/screens/home_screen.dart';
+import 'package:breakly/service/auth_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'appwrite/auth_api.dart';
 import 'constants/constants.dart';
 import 'screens/auth_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme/theme.dart';
 import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,11 +20,11 @@ Future<void> main() async {
 
   // 2. Налаштування для Android
   const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher'); // Стандартна іконка
+      AndroidInitializationSettings('@mipmap/ic_launcher'); // Стандартна іконка
 
   // 3. Налаштування для iOS
   const DarwinInitializationSettings initializationSettingsIOS =
-  DarwinInitializationSettings();
+      DarwinInitializationSettings();
 
   // 4. Об'єднуємо
   const InitializationSettings initializationSettings = InitializationSettings(
@@ -34,9 +33,10 @@ Future<void> main() async {
   );
 
   // 5. Ініціалізуємо плагін
-  await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
-  );
+  await Future.wait([
+    flutterLocalNotificationsPlugin.initialize(initializationSettings),
+    Supabase.initialize(url: SUPABASE_URL, anonKey: SUPABASE_TOKEN),
+  ]);
   runApp(
     MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => AuthAPI())],
