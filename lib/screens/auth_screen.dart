@@ -70,12 +70,12 @@ class _AuthScreenState extends State<AuthScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             GradientCircleBorder(size: 180, borderWidth: 3),
-            const SizedBox(height: 48),
+            const SizedBox(height: 140),
             Text(
               'Sign In',
               style: textTheme.displayLarge?.copyWith(letterSpacing: 1.2),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 31),
             // Google Sign In Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),

@@ -4,6 +4,7 @@ import 'package:breakly/widgets/onboarding/onboarding_indicator.dart';
 import 'package:breakly/widgets/onboarding/onboarding_notification.dart';
 import 'package:breakly/widgets/onboarding/onboarding_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -55,6 +56,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() {
       _currentPage = index;
     });
+  }
+
+  void askForNotificationPermission() async {
+    var status = await Permission.notification.status;
+    if (!status.isGranted) {
+      await Permission.notification.request();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    askForNotificationPermission();
   }
 
   @override
