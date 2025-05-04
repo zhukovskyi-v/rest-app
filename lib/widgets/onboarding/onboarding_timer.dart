@@ -3,7 +3,18 @@ import 'package:vibration/vibration.dart';
 import 'dart:async';
 
 class OnboardingTimer extends StatefulWidget {
-  const OnboardingTimer({super.key});
+  final double height;
+
+  final double width;
+
+  final double strokeWidth;
+
+  const OnboardingTimer({
+    super.key,
+    this.height = 100,
+    this.width = 100,
+    this.strokeWidth = 6,
+  });
 
   @override
   State<OnboardingTimer> createState() => _OnboardingTimerState();
@@ -21,7 +32,7 @@ class _OnboardingTimerState extends State<OnboardingTimer> {
     super.initState();
     secondsLeft = totalSeconds;
     _startTimer();
-    Vibration.hasVibrator().then((value){
+    Vibration.hasVibrator().then((value) {
       isVibrationSupported = value;
     });
   }
@@ -67,11 +78,11 @@ class _OnboardingTimerState extends State<OnboardingTimer> {
       alignment: Alignment.center,
       children: [
         SizedBox(
-          width: 100,
-          height: 100,
+          width: widget.width,
+          height: widget.height,
           child: CircularProgressIndicator(
             value: _getProgress(),
-            strokeWidth: 6,
+            strokeWidth: widget.strokeWidth,
             valueColor: AlwaysStoppedAnimation<Color>(
               theme.colorScheme.secondary,
             ),

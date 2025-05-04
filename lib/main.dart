@@ -1,3 +1,4 @@
+import 'package:breakly/screens/add_reminder_screen.dart';
 import 'package:breakly/screens/home_screen.dart';
 import 'package:breakly/service/auth_api.dart';
 import 'package:flutter/material.dart';
@@ -64,6 +65,7 @@ class MyApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingScreen(),
         '/authentication': (context) => const AuthScreen(),
         '/home': (context) => const HomeScreen(),
+        '/add-reminder': (context) => const AddReminderScreen(),
       },
     );
   }

@@ -101,7 +101,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: Colors.black),
       ),
       cardTheme: CardTheme(
-        color: Colors.white,
+        color: Colors.grey[300],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 4,
         shadowColor: Colors.black.withValues(alpha: 0.05),

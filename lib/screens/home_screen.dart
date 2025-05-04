@@ -1,127 +1,117 @@
-import 'package:breakly/constants/constants.dart';
-import 'package:breakly/service/auth_api.dart';
+import 'package:breakly/widgets/home/reminder_home_card.dart';
+import 'package:breakly/widgets/onboarding/onboarding_timer.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:provider/provider.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   Future<void> showImmediateNotification() async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'immediate_channel_id',
-          'Immediate Notifications',
-          channelDescription: 'Channel for instant notifications',
-          sound: RawResourceAndroidNotificationSound('timer_sound'),
-          // твій звук
-          importance: Importance.max,
-          priority: Priority.high,
-          playSound: true,
-        );
-
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-      sound: 'timer_sound.aiff', // iOS версія звуку
-    );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'Одразу сповіщення 🔥',
-      'Це миттєве сповіщення!',
-      notificationDetails,
-    );
+    // ... existing code ...
   }
 
   Future<void> scheduleNotification() async {
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.requestNotificationsPermission();
-
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
-
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'timer_channel_id_1',
-          'Timer Notifications',
-          channelDescription: 'Channel for timer alarms',
-          sound: RawResourceAndroidNotificationSound('timer_sound'),
-          importance: Importance.max,
-          priority: Priority.high,
-          playSound: true,
-        );
-
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-      sound: 'timer_sound.aiff',
-    );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      0,
-      'Таймер завершено!',
-      'Ваш таймер закінчився 🎵',
-      tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10)),
-      notificationDetails,
-      androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: null,
-    );
+    // ... existing code ...
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    final TextTheme textTheme = theme.textTheme;
+
     return Scaffold(
-      floatingActionButton: ElevatedButton(
-        onPressed: () {
-          context.read<AuthAPI>().signOut();
-          Navigator.pushReplacementNamed(context, '/authentication');
-        },
-        child: Text(
-          'Logout',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.inverseSurface,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        title: Text(
+          'Breakly',
+          style: textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.secondary,
           ),
         ),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Center(child: Text('Home Screen')),
-          ElevatedButton(
-            onPressed: scheduleNotification,
-            child: Text(
-              'Schedule Timer',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.inverseSurface,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: colorScheme.secondary.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: showImmediateNotification,
-            child: Text(
-              'Start Timer',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.inverseSurface,
+              child: IconButton(
+                icon: Icon(Icons.add, color: colorScheme.secondary),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/add-reminder');
+                },
               ),
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: theme.cardTheme.color,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: textTheme.bodyMedium?.color?.withValues(
+          alpha: 0.5,
+        ),
+        currentIndex: 0,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: ListView(
+            children: [
+              SizedBox(height: 20),
+              Center(
+                child: Column(
+                  children: [
+                    Text('Next Reminder In:', style: textTheme.bodyMedium),
+                    const SizedBox(height: 10),
+                    const OnboardingTimer(
+                      height: 180,
+                      width: 180,
+                      strokeWidth: 10,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+              // Upcoming Reminders
+              Text(
+                'Upcoming Reminders',
+                style: textTheme.titleMedium?.copyWith(
+                  color: textTheme.bodyMedium?.color,
+                  fontSize: 20,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Reminder Cards
+              ReminderHomeCard(
+                time: '1h 20m',
+                title: 'Short Break',
+                icon: Icons.coffee,
+                iconColor: colorScheme.primary,
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
       ),
     );
   }
