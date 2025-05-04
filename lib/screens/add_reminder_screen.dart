@@ -12,32 +12,30 @@ class AddReminderScreen extends StatefulWidget {
 }
 
 class _AddReminderScreenState extends State<AddReminderScreen> {
-  final List<ReminderTypeOption> _reminderOptions = [
-    ReminderTypeOption(
-      type: ReminderType.eyeRest,
-      title: 'Break Reminder',
-      icon: Icons.coffee,
-      gradientColors: [const Color(0xFF6A3093), const Color(0xFFA044FF)],
-    ),
-    ReminderTypeOption(
-      type: ReminderType.custom,
-      title: 'Medication Reminder',
-      icon: Icons.medication,
-      gradientColors: [const Color(0xFF396AFC), const Color(0xFF2948FF)],
-    ),
-    ReminderTypeOption(
-      type: ReminderType.stretch,
-      title: 'Physiotherapy Reminder',
-      icon: Icons.accessibility_new,
-      gradientColors: [const Color(0xFF11998E), const Color(0xFF38EF7D)],
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final TextTheme textTheme = theme.textTheme;
-
+    final List<ReminderTypeOption> reminderOptions = [
+      ReminderTypeOption(
+        type: ReminderType.eyeRest,
+        title: 'Break Reminder',
+        icon: Icons.coffee,
+        gradientColors: [const Color(0xFF6A3093), const Color(0xFFA044FF)],
+      ),
+      ReminderTypeOption(
+        type: ReminderType.custom,
+        title: 'Medication Reminder',
+        icon: Icons.medication,
+        gradientColors: [const Color(0xFF396AFC), const Color(0xFF2948FF)],
+      ),
+      ReminderTypeOption(
+        type: ReminderType.stretch,
+        title: 'Physiotherapy Reminder',
+        icon: Icons.accessibility_new,
+        gradientColors: [const Color(0xFF11998E), const Color(0xFF38EF7D)],
+      ),
+    ];
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -63,7 +61,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
               Expanded(
                 child: ListView(
                   children: [
-                    ..._reminderOptions.map(
+                    ...reminderOptions.map(
                       (option) => Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
                         child: ReminderTypeCard(option: option),

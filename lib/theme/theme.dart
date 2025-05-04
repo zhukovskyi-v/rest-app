@@ -4,7 +4,7 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: const Color(0xFF00FFC8),
+      primaryColor: const Color(0xFF11998E),
       scaffoldBackgroundColor: const Color(0xFF0B0B0C),
       fontFamily: 'Inter',
       textTheme: const TextTheme(
@@ -35,7 +35,7 @@ class AppTheme {
         ),
       ),
       colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF00FFC8),
+        primary: Color(0xFF11998E),
         secondary: Color(0xFF7A00FF),
         surface: Colors.white,
         inverseSurface: Colors.black,
@@ -51,7 +51,7 @@ class AppTheme {
         elevation: 4,
         shadowColor: Colors.black.withValues(alpha: 0.1),
       ),
-      splashColor: const Color(0xFF00FFC8).withValues(alpha: 0.2),
+      splashColor: const Color(0xFF11998E).withValues(alpha: 0.2),
       highlightColor: Colors.transparent,
     );
   }
@@ -59,7 +59,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
-      primaryColor: const Color(0xFF00FFC8),
+      primaryColor: const Color(0xFF11998E),
       scaffoldBackgroundColor: Colors.white,
       fontFamily: 'Inter',
       textTheme: const TextTheme(
@@ -90,7 +90,7 @@ class AppTheme {
         ),
       ),
       colorScheme: const ColorScheme.light(
-        primary: Color(0xFF00FFC8),
+        primary: Color(0xFF11998E),
         secondary: Color(0xFF7A00FF),
         surface: Colors.black,
         inverseSurface: Colors.white,
@@ -106,7 +106,7 @@ class AppTheme {
         elevation: 4,
         shadowColor: Colors.black.withValues(alpha: 0.05),
       ),
-      splashColor: const Color(0xFF00FFC8).withValues(alpha: 0.1),
+      splashColor: const Color(0xFF11998E).withValues(alpha: 0.1),
       highlightColor: Colors.transparent,
     );
   }

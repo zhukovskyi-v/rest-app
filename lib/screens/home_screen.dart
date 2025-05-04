@@ -1,6 +1,8 @@
+import 'package:breakly/service/auth_api.dart';
 import 'package:breakly/widgets/home/reminder_home_card.dart';
 import 'package:breakly/widgets/onboarding/onboarding_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,13 +26,6 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: Text(
-          'Breakly',
-          style: textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.secondary,
-          ),
-        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -45,6 +40,23 @@ class HomeScreen extends StatelessWidget {
                 icon: Icon(Icons.add, color: colorScheme.secondary),
                 onPressed: () {
                   Navigator.pushNamed(context, '/add-reminder');
+                },
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.logout, color: colorScheme.secondary),
+                onPressed: () {
+                  context.read<AuthAPI>().signOut();
+                  Navigator.pushReplacementNamed(context, '/authentication');
                 },
               ),
             ),

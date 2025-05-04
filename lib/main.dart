@@ -38,7 +38,9 @@ Future<void> main() async {
   await Future.wait([
     flutterLocalNotificationsPlugin.initialize(initializationSettings),
     Supabase.initialize(url: SUPABASE_URL, anonKey: SUPABASE_TOKEN),
-    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ),
   ]);
 
   runApp(
