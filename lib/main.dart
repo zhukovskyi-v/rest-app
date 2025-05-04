@@ -1,3 +1,4 @@
+import 'package:breakly/screens/add_reminder_option_screen.dart';
 import 'package:breakly/screens/add_reminder_screen.dart';
 import 'package:breakly/screens/home_screen.dart';
 import 'package:breakly/service/auth_api.dart';
@@ -38,9 +39,7 @@ Future<void> main() async {
   await Future.wait([
     flutterLocalNotificationsPlugin.initialize(initializationSettings),
     Supabase.initialize(url: SUPABASE_URL, anonKey: SUPABASE_TOKEN),
-    Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ),
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
   ]);
 
   runApp(
@@ -67,6 +66,7 @@ class MyApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingScreen(),
         '/authentication': (context) => const AuthScreen(),
         '/home': (context) => const HomeScreen(),
+        '/add-reminder-option': (context) => const AddReminderOptionScreen(),
         '/add-reminder': (context) => const AddReminderScreen(),
       },
     );

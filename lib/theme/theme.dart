@@ -111,3 +111,32 @@ class AppTheme {
     );
   }
 }
+
+extension DatePickerTheme on ThemeData {
+  ThemeData datePickerTheme() {
+    final bool isDarkMode = brightness == Brightness.dark;
+
+    return copyWith(
+      colorScheme:
+          isDarkMode
+              ? ColorScheme.dark(
+                primary: colorScheme.primary,
+                onPrimary: Colors.white,
+                surface: const Color(0xFF303030),
+                onSurface: Colors.white,
+              )
+              : ColorScheme.light(
+                primary: colorScheme.primary,
+                onPrimary: Colors.white,
+                surface: Colors.white,
+                onSurface: Colors.black,
+              ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: isDarkMode ? const Color(0xFF303030) : Colors.white,
+      ),
+    );
+  }
+}

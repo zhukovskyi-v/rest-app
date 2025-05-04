@@ -1,5 +1,6 @@
 import 'package:breakly/service/auth_api.dart';
 import 'package:breakly/widgets/home/reminder_home_card.dart';
+import 'package:breakly/widgets/navigation/auth_bottom_navigation_bar.dart';
 import 'package:breakly/widgets/onboarding/onboarding_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -63,27 +64,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: theme.cardTheme.color,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: colorScheme.primary,
-        unselectedItemColor: textTheme.bodyMedium?.color?.withValues(
-          alpha: 0.5,
-        ),
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
+      bottomNavigationBar: AuthBottomNavigationBar(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),

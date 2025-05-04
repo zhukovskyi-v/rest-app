@@ -36,7 +36,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Timed Breaks\nand Exercises',
       description:
           'Track your break and exercise durations with a convenient built-in timer.',
-      image: OnboardingTimer(),
+      image: OnboardingTimer(withVibration: true),
       buttonText: 'Done',
     ),
   ];

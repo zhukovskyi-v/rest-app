@@ -8,33 +8,43 @@ class OnboardingTimer extends StatefulWidget {
   final double width;
 
   final double strokeWidth;
+  final bool withVibration;
 
   const OnboardingTimer({
     super.key,
     this.height = 100,
     this.width = 100,
     this.strokeWidth = 6,
+    this.withVibration = false,
   });
 
   @override
   State<OnboardingTimer> createState() => _OnboardingTimerState();
 }
 
-class _OnboardingTimerState extends State<OnboardingTimer> {
+class _OnboardingTimerState extends State<OnboardingTimer> with WidgetsBindingObserver{
   static const int totalSeconds = 119;
   late int secondsLeft;
   Timer? _timer;
   bool isCompleted = false;
-  var isVibrationSupported = true;
+  var isVibrationSupported = false;
 
   @override
   void initState() {
     super.initState();
     secondsLeft = totalSeconds;
     _startTimer();
-    Vibration.hasVibrator().then((value) {
-      isVibrationSupported = value;
-    });
+    _checkVibration();
+  }
+
+  void _checkVibration() {
+    if (widget.withVibration) {
+      Vibration.hasVibrator().then((value) {
+        setState(() {
+          isVibrationSupported = value;
+        });
+      });
+    }
   }
 
   void _startTimer() {
@@ -57,8 +67,20 @@ class _OnboardingTimerState extends State<OnboardingTimer> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      setState(() {
+        isVibrationSupported = false;
+      });
+    } else if (state == AppLifecycleState.resumed) {
+      _checkVibration();
+    }
   }
 
   double _getProgress() {
