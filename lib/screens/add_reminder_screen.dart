@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'dart:io' show Platform;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_init;
@@ -74,14 +75,6 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           requestAlertPermission: true,
           requestBadgePermission: true,
           requestSoundPermission: true,
-          onDidReceiveLocalNotification: (
-            int id,
-            String? title,
-            String? body,
-            String? payload,
-          ) async {
-            // Handle iOS notification when app is in foreground
-          },
         );
 
     final InitializationSettings initializationSettings =
@@ -115,68 +108,80 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   }
 
   Future<void> _scheduleNotification() async {
-    if (_formData.date == null ||
-        _formData.time == null ||
-        _formData.title == null) {
-      return;
+    try {
+      if (_formData.date == null ||
+          _formData.time == null ||
+          _formData.title == null) {
+        return;
+      }
+
+      // Create a DateTime from the date and time
+      final DateTime scheduledDate = DateTime(
+        _formData.date!.year,
+        _formData.date!.month,
+        _formData.date!.day,
+        _formData.time!.hour,
+        _formData.time!.minute,
+      );
+
+      // Convert to TZDateTime
+      final tz.TZDateTime scheduledTZDate = tz.TZDateTime.from(
+        scheduledDate,
+        tz.local,
+      );
+
+      // Configure notification details
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'reminder_channel_id',
+            'Reminder Notifications',
+            channelDescription: 'Channel for reminder notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+            sound: const RawResourceAndroidNotificationSound('timer_sound'),
+          );
+
+      final DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        sound: 'timer_sound.aiff',
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      final NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      // Generate a unique ID for the notification
+      final int notificationId = scheduledDate.millisecondsSinceEpoch ~/ 1000;
+
+      // Schedule the notification
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        notificationId,
+        _formData.title,
+        _formData.description ?? 'Time for your reminder!',
+        scheduledTZDate,
+        notificationDetails,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'reminder_${_formData.type}',
+        matchDateTimeComponents: _getRepeatInterval(),
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
+      );
+
+      debugPrint('Notification scheduled for: ${scheduledTZDate.toString()}');
+    } catch (exception, stackTrace) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error scheduling notification. ${exception.toString()}',
+          ),
+          backgroundColor: Colors.white12,
+        ),
+      );
+      await Sentry.captureException(exception, stackTrace: stackTrace);
     }
-
-    // Create a DateTime from the date and time
-    final DateTime scheduledDate = DateTime(
-      _formData.date!.year,
-      _formData.date!.month,
-      _formData.date!.day,
-      _formData.time!.hour,
-      _formData.time!.minute,
-    );
-
-    // Convert to TZDateTime
-    final tz.TZDateTime scheduledTZDate = tz.TZDateTime.from(
-      scheduledDate,
-      tz.local,
-    );
-
-    // Configure notification details
-    final AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'reminder_channel_id',
-          'Reminder Notifications',
-          channelDescription: 'Channel for reminder notifications',
-          importance: Importance.max,
-          priority: Priority.high,
-          sound: const RawResourceAndroidNotificationSound('timer_sound'),
-        );
-
-    final DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-      sound: 'timer_sound.aiff',
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    final NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    // Generate a unique ID for the notification
-    final int notificationId = scheduledDate.millisecondsSinceEpoch ~/ 1000;
-
-    // Schedule the notification
-    await _flutterLocalNotificationsPlugin.zonedSchedule(
-      notificationId,
-      _formData.title,
-      _formData.description ?? 'Time for your reminder!',
-      scheduledTZDate,
-      notificationDetails,
-      androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: 'reminder_${_formData.type}',
-      matchDateTimeComponents: _getRepeatInterval(),
-    );
-
-    debugPrint('Notification scheduled for: ${scheduledTZDate.toString()}');
   }
 
   DateTimeComponents? _getRepeatInterval() {
@@ -541,7 +546,6 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
 
               // Description field
               TextFormField(
@@ -648,7 +652,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
               // Save button
               ElevatedButton(
-                onPressed: _formData.isValid ? _saveReminder : null,
+                onPressed: _saveReminder,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,
