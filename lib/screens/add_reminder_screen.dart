@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io' show Platform;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_init;
 
-const List<String> list = <String>[
+// Constants moved to a separate section for better organization
+const List<String> kRepeatOptions = <String>[
   'Every hour',
   'Every day',
   'Every week',
@@ -10,7 +16,25 @@ const List<String> list = <String>[
   'No repeat',
 ];
 
-const List<String> listType = <String>['Rest', 'Medicine'];
+const List<String> kReminderTypes = <String>['Rest', 'Medicine'];
+
+// Class to manage form data
+class ReminderFormData {
+  String? title;
+  String? description;
+  DateTime? date;
+  TimeOfDay? time;
+  String? repeatOption;
+  String? type;
+
+  bool get isValid {
+    return title != null &&
+        title!.isNotEmpty &&
+        date != null &&
+        time != null &&
+        type != null;
+  }
+}
 
 class AddReminderScreen extends StatefulWidget {
   const AddReminderScreen({super.key});
@@ -20,23 +44,210 @@ class AddReminderScreen extends StatefulWidget {
 }
 
 class _AddReminderScreenState extends State<AddReminderScreen> {
-  final titleController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
-  final descriptionController = TextEditingController();
+  final _formData = ReminderFormData();
 
-  DateTime? selectedDate;
-  TimeOfDay? selectedTime;
+  bool _titleHasError = false;
+  bool _dateHasError = false;
+  bool _timeHasError = false;
+  bool _typeHasError = false;
 
-  String? _selectedRepeatOption;
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
 
-  String? _selectedTypeOption;
+  Future<void> _initializeNotifications() async {
+    tz_init.initializeTimeZones();
+
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+          onDidReceiveLocalNotification: (
+            int id,
+            String? title,
+            String? body,
+            String? payload,
+          ) async {
+            // Handle iOS notification when app is in foreground
+          },
+        );
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsDarwin,
+        );
+
+    await _flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (
+        NotificationResponse notificationResponse,
+      ) async {
+        // Handle notification tap
+        final String? payload = notificationResponse.payload;
+        if (payload != null) {
+          debugPrint('Notification payload: $payload');
+          // Navigate to specific screen based on payload if needed
+        }
+      },
+    );
+
+    // Request permissions for iOS
+    if (Platform.isIOS) {
+      await _flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    }
+  }
+
+  Future<void> _scheduleNotification() async {
+    if (_formData.date == null ||
+        _formData.time == null ||
+        _formData.title == null) {
+      return;
+    }
+
+    // Create a DateTime from the date and time
+    final DateTime scheduledDate = DateTime(
+      _formData.date!.year,
+      _formData.date!.month,
+      _formData.date!.day,
+      _formData.time!.hour,
+      _formData.time!.minute,
+    );
+
+    // Convert to TZDateTime
+    final tz.TZDateTime scheduledTZDate = tz.TZDateTime.from(
+      scheduledDate,
+      tz.local,
+    );
+
+    // Configure notification details
+    final AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'reminder_channel_id',
+          'Reminder Notifications',
+          channelDescription: 'Channel for reminder notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          sound: const RawResourceAndroidNotificationSound('timer_sound'),
+        );
+
+    final DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      sound: 'timer_sound.aiff',
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    final NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // Generate a unique ID for the notification
+    final int notificationId = scheduledDate.millisecondsSinceEpoch ~/ 1000;
+
+    // Schedule the notification
+    await _flutterLocalNotificationsPlugin.zonedSchedule(
+      notificationId,
+      _formData.title,
+      _formData.description ?? 'Time for your reminder!',
+      scheduledTZDate,
+      notificationDetails,
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'reminder_${_formData.type}',
+      matchDateTimeComponents: _getRepeatInterval(),
+    );
+
+    debugPrint('Notification scheduled for: ${scheduledTZDate.toString()}');
+  }
+
+  DateTimeComponents? _getRepeatInterval() {
+    switch (_formData.repeatOption) {
+      case 'Every day':
+        return DateTimeComponents.time;
+      case 'Every week':
+        return DateTimeComponents.dayOfWeekAndTime;
+      case 'Every month':
+        return DateTimeComponents.dayOfMonthAndTime;
+      default:
+        return null;
+    }
+  }
 
   @override
   void dispose() {
-    titleController.dispose();
-    descriptionController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hours = time.hour.toString().padLeft(2, '0');
+    final minutes = time.minute.toString().padLeft(2, '0');
+    return '$hours:$minutes';
+  }
+
+  void _validateForm() {
+    setState(() {
+      _titleHasError = _titleController.text.isEmpty;
+      _dateHasError = _formData.date == null;
+      _timeHasError = _formData.time == null;
+      _typeHasError = _formData.type == null;
+    });
+  }
+
+  // Save the reminder
+  void _saveReminder() async {
+    if (_formKey.currentState!.validate() && _formData.isValid) {
+      // Schedule the notification
+      await _scheduleNotification();
+
+      // Here you would save the reminder to your database
+      // For now, just print the values
+      print('Saving reminder:');
+      print('Title: ${_formData.title}');
+      print('Description: ${_formData.description}');
+      print('Date: ${_formData.date}');
+      print('Time: ${_formData.time}');
+      print('Repeat: ${_formData.repeatOption}');
+      print('Type: ${_formData.type}');
+
+      // Navigate back or show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reminder saved successfully!'),
+          backgroundColor: Colors.white12,
+        ),
+      );
+      Navigator.pop(context);
+    } else {
+      _validateForm();
+    }
+  }
+
+  // ... existing code ...
 
   Future<void> _showRepeatOptionsModal(BuildContext context) async {
     await showModalBottomSheet<void>(
@@ -51,36 +262,25 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Select Repeat Option',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
+              _buildModalHeader(context, 'Select Repeat Option'),
               const Divider(),
               Expanded(
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: list.length,
+                  itemCount: kRepeatOptions.length,
                   itemBuilder: (BuildContext context, int index) {
                     return ListTile(
-                      title: Text(list[index]),
+                      title: Text(kRepeatOptions[index]),
+                      trailing:
+                          _formData.repeatOption == kRepeatOptions[index]
+                              ? Icon(
+                                Icons.check,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                              : null,
                       onTap: () {
                         setState(() {
-                          _selectedRepeatOption = list[index];
+                          _formData.repeatOption = kRepeatOptions[index];
                         });
                         Navigator.pop(context);
                       },
@@ -108,36 +308,26 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Select Type Option',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
+              _buildModalHeader(context, 'Select Type Option'),
               const Divider(),
               Expanded(
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: listType.length,
+                  itemCount: kReminderTypes.length,
                   itemBuilder: (BuildContext context, int index) {
                     return ListTile(
-                      title: Text(listType[index]),
+                      title: Text(kReminderTypes[index]),
+                      trailing:
+                          _formData.type == kReminderTypes[index]
+                              ? Icon(
+                                Icons.check,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                              : null,
                       onTap: () {
                         setState(() {
-                          _selectedTypeOption = listType[index];
+                          _formData.type = kReminderTypes[index];
+                          _typeHasError = false;
                         });
                         Navigator.pop(context);
                       },
@@ -152,272 +342,324 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     );
   }
 
+  // Reusable widget for modal headers
+  Widget _buildModalHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: TextButton.icon(
+        label: Text(title, style: Theme.of(context).textTheme.titleMedium),
+        icon: const Icon(Icons.close),
+        onPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  Future<void> _onTimePress() async {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+
+    TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _formData.time ?? TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme:
+                isDarkMode
+                    ? ColorScheme.dark(
+                      primary: theme.colorScheme.primary,
+                      onPrimary: Colors.white,
+                      surface: const Color(0xFF303030),
+                      onSurface: Colors.white,
+                    )
+                    : ColorScheme.light(
+                      primary: theme.colorScheme.primary,
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
+              ),
+            ),
+            dialogTheme: DialogTheme(
+              backgroundColor:
+                  isDarkMode ? const Color(0xFF303030) : Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (pickedTime != null) {
+      setState(() {
+        _formData.time = pickedTime;
+        _timeHasError = false;
+      });
+    }
+  }
+
+  Future<void> _onDatePress() async {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _formData.date ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme:
+                isDarkMode
+                    ? ColorScheme.dark(
+                      primary: theme.colorScheme.primary,
+                      onPrimary: Colors.white,
+                      surface: const Color(0xFF303030),
+                      onSurface: Colors.white,
+                    )
+                    : ColorScheme.light(
+                      primary: theme.colorScheme.primary,
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
+              ),
+            ),
+            dialogTheme: DialogTheme(
+              backgroundColor:
+                  isDarkMode ? const Color(0xFF303030) : Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (pickedDate != null) {
+      setState(() {
+        _formData.date = pickedDate;
+        _dateHasError = false;
+      });
+    }
+  }
+
+  // Reusable widget for form field containers
+  Widget _buildFormField({
+    required String label,
+    required Widget content,
+    bool hasError = false,
+    String? errorText,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: hasError ? Colors.red : Theme.of(context).dividerColor,
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(color: hasError ? Colors.red : null),
+              ),
+              content,
+            ],
+          ),
+          if (hasError && errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Text(
+                errorText,
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Reminder')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: null,
-        tooltip: 'Add Reminder',
-        disabledElevation: 0.0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add),
+      appBar: AppBar(
+        title: const Text('Add Reminder'),
+        actions: [
+          TextButton(
+            onPressed: _formData.isValid ? _saveReminder : null,
+            child: Text(
+              'Save',
+              style: TextStyle(
+                color:
+                    _formData.isValid
+                        ? theme.colorScheme.primary
+                        : theme.disabledColor,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
-        child: Center(
+        child: Form(
+          key: _formKey,
           child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(left: 25, right: 25),
-                child: TextFormField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    labelText: 'Title',
-                    border: UnderlineInputBorder(),
-                  ),
+              // Title field
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  labelText: 'Title',
+                  hintText: 'Enter reminder title',
+                  border: const UnderlineInputBorder(),
+                  errorText: _titleHasError ? 'Title is required' : null,
                 ),
+                onChanged: (value) {
+                  setState(() {
+                    _formData.title = value;
+                    _titleHasError = value.isEmpty;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Title is required';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(left: 25, right: 25),
-                child: TextFormField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    border: UnderlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(left: 25, right: 25),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1.0,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Date'),
-                      Row(
-                        children: [
-                          Text(
-                            selectedDate != null
-                                ? '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}'
-                                : '',
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.calendar_today),
-                            onPressed: () async {
-                              final ThemeData theme = Theme.of(context);
-                              final bool isDarkMode =
-                                  theme.brightness == Brightness.dark;
 
-                              DateTime? pickedDate = await showDatePicker(
-                                context: context,
-                                initialDate: selectedDate,
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime(2101),
-                                builder: (context, child) {
-                                  return Theme(
-                                    data: Theme.of(context).copyWith(
-                                      colorScheme:
-                                          isDarkMode
-                                              ? ColorScheme.dark(
-                                                primary:
-                                                    theme.colorScheme.primary,
-                                                onPrimary: Colors.white,
-                                                surface: const Color(
-                                                  0xFF303030,
-                                                ),
-                                                onSurface: Colors.white,
-                                              )
-                                              : ColorScheme.light(
-                                                primary:
-                                                    theme.colorScheme.primary,
-                                                onPrimary: Colors.white,
-                                                surface: Colors.white,
-                                                onSurface: Colors.black,
-                                              ),
-                                      textButtonTheme: TextButtonThemeData(
-                                        style: TextButton.styleFrom(
-                                          foregroundColor:
-                                              theme.colorScheme.primary,
-                                        ),
-                                      ),
-                                      dialogTheme: DialogThemeData(
-                                        backgroundColor:
-                                            isDarkMode
-                                                ? const Color(0xFF303030)
-                                                : Colors.white,
-                                      ),
-                                    ),
-                                    child: child!,
-                                  );
-                                },
-                              );
-                              if (pickedDate != null &&
-                                  pickedDate != selectedDate) {
-                                setState(() {
-                                  selectedDate = pickedDate;
-                                });
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              // Description field
+              TextFormField(
+                controller: _descriptionController,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Enter reminder description (optional)',
+                  border: const UnderlineInputBorder(),
                 ),
+                onChanged: (value) {
+                  _formData.description = value;
+                },
+                maxLines: 2,
               ),
               const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(left: 25, right: 25),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1.0,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Time'),
-                      Row(
-                        children: [
-                          Text(
-                            selectedTime != null
-                                ? '${selectedTime?.hour}-${selectedTime?.minute}'
-                                : '',
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.timer_outlined),
-                            onPressed: () async {
-                              final ThemeData theme = Theme.of(context);
-                              final bool isDarkMode =
-                                  theme.brightness == Brightness.dark;
 
-                              TimeOfDay? pickedDate = await showTimePicker(
-                                context: context,
-                                initialTime: TimeOfDay.now(),
-                                builder: (context, child) {
-                                  return Theme(
-                                    data: Theme.of(context).copyWith(
-                                      colorScheme:
-                                          isDarkMode
-                                              ? ColorScheme.dark(
-                                                primary:
-                                                    theme.colorScheme.primary,
-                                                onPrimary: Colors.white,
-                                                surface: const Color(
-                                                  0xFF303030,
-                                                ),
-                                                onSurface: Colors.white,
-                                              )
-                                              : ColorScheme.light(
-                                                primary:
-                                                    theme.colorScheme.primary,
-                                                onPrimary: Colors.white,
-                                                surface: Colors.white,
-                                                onSurface: Colors.black,
-                                              ),
-                                      textButtonTheme: TextButtonThemeData(
-                                        style: TextButton.styleFrom(
-                                          foregroundColor:
-                                              theme.colorScheme.primary,
-                                        ),
-                                      ),
-                                      dialogTheme: DialogThemeData(
-                                        backgroundColor:
-                                            isDarkMode
-                                                ? const Color(0xFF303030)
-                                                : Colors.white,
-                                      ),
-                                    ),
-                                    child: child!,
-                                  );
-                                },
-                              );
-                              setState(() {
-                                selectedTime = pickedDate;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+              // Date field
+              _buildFormField(
+                label: 'Date',
+                hasError: _dateHasError,
+                errorText: 'Date is required',
+                content: TextButton.icon(
+                  iconAlignment: IconAlignment.end,
+                  label: Text(
+                    _formData.date != null
+                        ? _formatDate(_formData.date!)
+                        : 'Select date',
+                    style: TextStyle(
+                      color:
+                          _formData.date != null
+                              ? theme.textTheme.bodyMedium?.color
+                              : theme.hintColor,
+                    ),
+                  ),
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: _onDatePress,
+                ),
+              ),
+
+              // Time field
+              _buildFormField(
+                label: 'Time',
+                hasError: _timeHasError,
+                errorText: 'Time is required',
+                content: TextButton.icon(
+                  iconAlignment: IconAlignment.end,
+                  label: Text(
+                    _formData.time != null
+                        ? _formatTime(_formData.time!)
+                        : 'Select time',
+                    style: TextStyle(
+                      color:
+                          _formData.time != null
+                              ? theme.textTheme.bodyMedium?.color
+                              : theme.hintColor,
+                    ),
+                  ),
+                  icon: const Icon(Icons.timer_outlined),
+                  onPressed: _onTimePress,
+                ),
+              ),
+
+              // Repeat field
+              _buildFormField(
+                label: 'Repeat',
+                content: TextButton.icon(
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(Icons.repeat),
+                  onPressed: () => _showRepeatOptionsModal(context),
+                  label: Text(
+                    _formData.repeatOption ?? 'No repeat',
+                    style: TextStyle(
+                      color:
+                          _formData.repeatOption != null
+                              ? theme.textTheme.bodyMedium?.color
+                              : theme.hintColor,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(left: 25, right: 25),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1.0,
-                      ),
+
+              // Type field
+              _buildFormField(
+                label: 'Type',
+                hasError: _typeHasError,
+                errorText: 'Type is required',
+                content: TextButton.icon(
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(Icons.category_outlined),
+                  label: Text(
+                    _formData.type ?? 'Select type',
+                    style: TextStyle(
+                      color:
+                          _formData.type != null
+                              ? theme.textTheme.bodyMedium?.color
+                              : theme.hintColor,
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Repeat'),
-                      Row(
-                        children: [
-                          Text(_selectedRepeatOption ?? ''),
-                          IconButton(
-                            icon: Icon(Icons.repeat),
-                            onPressed: () async {
-                              _showRepeatOptionsModal(context);
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  onPressed: () => _showTypeOptionsModal(context),
                 ),
               ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(left: 25, right: 25),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1.0,
-                      ),
-                    ),
+
+              const SizedBox(height: 40),
+
+              // Save button
+              ElevatedButton(
+                onPressed: _formData.isValid ? _saveReminder : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Type'),
-                      Row(
-                        children: [
-                          Text(_selectedTypeOption ?? ''),
-                          IconButton(
-                            icon: Icon(Icons.bloodtype_outlined),
-                            onPressed: () async {
-                              _showTypeOptionsModal(context);
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                ),
+                child: const Text(
+                  'Save Reminder',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
