@@ -1,12 +1,11 @@
+import 'package:breakly/entities/reminder.dart';
+import 'package:breakly/lib/routes.dart';
+import 'package:breakly/services/notification_service.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
-import 'dart:io' show Platform;
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz_init;
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
-// Constants moved to a separate section for better organization
 const List<String> kRepeatOptions = <String>[
   'Every hour',
   'Every day',
@@ -19,7 +18,6 @@ const List<String> kRepeatOptions = <String>[
 
 const List<String> kReminderTypes = <String>['Rest', 'Medicine'];
 
-// Class to manage form data
 class ReminderFormData {
   String? title;
   String? description;
@@ -50,6 +48,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   final _descriptionController = TextEditingController();
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final _notificationService = NotificationService();
 
   final _formData = ReminderFormData();
 
@@ -61,130 +60,38 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeNotifications();
-  }
-
-  Future<void> _initializeNotifications() async {
-    tz_init.initializeTimeZones();
-
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    final DarwinInitializationSettings initializationSettingsDarwin =
-        DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
-
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsDarwin,
-        );
-
-    await _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (
-        NotificationResponse notificationResponse,
-      ) async {
-        // Handle notification tap
-        final String? payload = notificationResponse.payload;
-        if (payload != null) {
-          debugPrint('Notification payload: $payload');
-          // Navigate to specific screen based on payload if needed
-        }
-      },
-    );
-
-    // Request permissions for iOS
-    if (Platform.isIOS) {
-      await _flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin
-          >()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
-    }
+    _notificationService.initialize();
   }
 
   Future<void> _scheduleNotification() async {
-    try {
-      if (_formData.date == null ||
-          _formData.time == null ||
-          _formData.title == null) {
-        return;
-      }
-
-      // Create a DateTime from the date and time
-      final DateTime scheduledDate = DateTime(
-        _formData.date!.year,
-        _formData.date!.month,
-        _formData.date!.day,
-        _formData.time!.hour,
-        _formData.time!.minute,
-      );
-
-      // Convert to TZDateTime
-      final tz.TZDateTime scheduledTZDate = tz.TZDateTime.from(
-        scheduledDate,
-        tz.local,
-      );
-
-      // Configure notification details
-      final AndroidNotificationDetails androidDetails =
-          AndroidNotificationDetails(
-            'reminder_channel_id',
-            'Reminder Notifications',
-            channelDescription: 'Channel for reminder notifications',
-            importance: Importance.max,
-            priority: Priority.high,
-            sound: const RawResourceAndroidNotificationSound('timer_sound'),
-          );
-
-      final DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-        sound: 'timer_sound.aiff',
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      );
-
-      final NotificationDetails notificationDetails = NotificationDetails(
-        android: androidDetails,
-        iOS: iosDetails,
-      );
-
-      // Generate a unique ID for the notification
-      final int notificationId = scheduledDate.millisecondsSinceEpoch ~/ 1000;
-
-      // Schedule the notification
-      await _flutterLocalNotificationsPlugin.zonedSchedule(
-        notificationId,
-        _formData.title,
-        _formData.description ?? 'Time for your reminder!',
-        scheduledTZDate,
-        notificationDetails,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        payload: 'reminder_${_formData.type}',
-        matchDateTimeComponents: _getRepeatInterval(),
-        androidScheduleMode: AndroidScheduleMode.alarmClock,
-      );
-
-      debugPrint('Notification scheduled for: ${scheduledTZDate.toString()}');
-    } catch (exception, stackTrace) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error scheduling notification. ${exception.toString()}',
-          ),
-          backgroundColor: Colors.white12,
-        ),
-      );
-      await Sentry.captureException(exception, stackTrace: stackTrace);
+    if (_formData.date == null ||
+        _formData.time == null ||
+        _formData.title == null) {
+      return;
     }
+
+    final DateTime scheduledDate = DateTime(
+      _formData.date!.year,
+      _formData.date!.month,
+      _formData.date!.day,
+      _formData.time!.hour,
+      _formData.time!.minute,
+    );
+
+    final Reminder reminder = await _notificationService.scheduleNotification(
+      title: _formData.title!,
+      description: _formData.description,
+      scheduledDate: scheduledDate,
+      type: _formData.type!,
+      repeatOption: _formData.repeatOption,
+      context: context,
+    );
+
+    // Print the reminder as JSON
+    print('Reminder created: ${reminder.toJsonString()}');
   }
 
-  DateTimeComponents? _getRepeatInterval() {
+  DateTimeComponents? getRepeatInterval() {
     switch (_formData.repeatOption) {
       case 'Every day':
         return DateTimeComponents.time;
@@ -204,17 +111,17 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
+  String formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
-  String _formatTime(TimeOfDay time) {
+  String formatTime(TimeOfDay time) {
     final hours = time.hour.toString().padLeft(2, '0');
     final minutes = time.minute.toString().padLeft(2, '0');
     return '$hours:$minutes';
   }
 
-  void _validateForm() {
+  void validateForm() {
     setState(() {
       _titleHasError = _titleController.text.isEmpty;
       _dateHasError = _formData.date == null;
@@ -223,40 +130,25 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     });
   }
 
-  // Save the reminder
-  void _saveReminder() async {
+  void saveReminder() async {
     if (_formKey.currentState!.validate() && _formData.isValid) {
-      // Schedule the notification
       await _scheduleNotification();
-
-      // Here you would save the reminder to your database
-      // For now, just print the values
-      print('Saving reminder:');
-      print('Title: ${_formData.title}');
-      print('Description: ${_formData.description}');
-      print('Date: ${_formData.date}');
-      print('Time: ${_formData.time}');
-      print('Repeat: ${_formData.repeatOption}');
-      print('Type: ${_formData.type}');
-
-      // Navigate back or show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Reminder saved successfully!'),
           backgroundColor: Colors.white12,
         ),
       );
-      Navigator.pop(context);
+      context.replace(Routes.homePage);
     } else {
-      _validateForm();
+      validateForm();
     }
   }
 
-  // ... existing code ...
-
-  Future<void> _showRepeatOptionsModal(BuildContext context) async {
+  Future<void> showRepeatOptionsModal(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
       ),
@@ -267,7 +159,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildModalHeader(context, 'Select Repeat Option'),
+              buildModalHeader(context, 'Select Repeat Option'),
               const Divider(),
               Expanded(
                 child: ListView.builder(
@@ -300,9 +192,10 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     );
   }
 
-  Future<void> _showTypeOptionsModal(BuildContext context) async {
+  Future<void> showTypeOptionsModal(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
       ),
@@ -313,7 +206,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildModalHeader(context, 'Select Type Option'),
+              buildModalHeader(context, 'Select Type Option'),
               const Divider(),
               Expanded(
                 child: ListView.builder(
@@ -348,7 +241,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   }
 
   // Reusable widget for modal headers
-  Widget _buildModalHeader(BuildContext context, String title) {
+  Widget buildModalHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TextButton.icon(
@@ -359,7 +252,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     );
   }
 
-  Future<void> _onTimePress() async {
+  Future<void> onTimePress() async {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
 
@@ -405,7 +298,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     }
   }
 
-  Future<void> _onDatePress() async {
+  Future<void> onDatePress() async {
     final ThemeData theme = Theme.of(context);
     final bool isDarkMode = theme.brightness == Brightness.dark;
 
@@ -454,7 +347,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   }
 
   // Reusable widget for form field containers
-  Widget _buildFormField({
+  Widget buildFormField({
     required String label,
     required Widget content,
     bool hasError = false,
@@ -505,7 +398,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         title: const Text('Add Reminder'),
         actions: [
           TextButton(
-            onPressed: _formData.isValid ? _saveReminder : null,
+            onPressed: _formData.isValid ? saveReminder : null,
             child: Text(
               'Save',
               style: TextStyle(
@@ -563,7 +456,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
               const SizedBox(height: 20),
 
               // Date field
-              _buildFormField(
+              buildFormField(
                 label: 'Date',
                 hasError: _dateHasError,
                 errorText: 'Date is required',
@@ -571,7 +464,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                   iconAlignment: IconAlignment.end,
                   label: Text(
                     _formData.date != null
-                        ? _formatDate(_formData.date!)
+                        ? formatDate(_formData.date!)
                         : 'Select date',
                     style: TextStyle(
                       color:
@@ -581,12 +474,12 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.calendar_today),
-                  onPressed: _onDatePress,
+                  onPressed: onDatePress,
                 ),
               ),
 
               // Time field
-              _buildFormField(
+              buildFormField(
                 label: 'Time',
                 hasError: _timeHasError,
                 errorText: 'Time is required',
@@ -594,7 +487,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                   iconAlignment: IconAlignment.end,
                   label: Text(
                     _formData.time != null
-                        ? _formatTime(_formData.time!)
+                        ? formatTime(_formData.time!)
                         : 'Select time',
                     style: TextStyle(
                       color:
@@ -604,17 +497,16 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.timer_outlined),
-                  onPressed: _onTimePress,
+                  onPressed: onTimePress,
                 ),
               ),
 
-              // Repeat field
-              _buildFormField(
+              buildFormField(
                 label: 'Repeat',
                 content: TextButton.icon(
                   iconAlignment: IconAlignment.end,
                   icon: const Icon(Icons.repeat),
-                  onPressed: () => _showRepeatOptionsModal(context),
+                  onPressed: () => showRepeatOptionsModal(context),
                   label: Text(
                     _formData.repeatOption ?? 'No repeat',
                     style: TextStyle(
@@ -628,7 +520,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
               ),
 
               // Type field
-              _buildFormField(
+              buildFormField(
                 label: 'Type',
                 hasError: _typeHasError,
                 errorText: 'Type is required',
@@ -644,7 +536,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                               : theme.hintColor,
                     ),
                   ),
-                  onPressed: () => _showTypeOptionsModal(context),
+                  onPressed: () => showTypeOptionsModal(context),
                 ),
               ),
 
@@ -652,7 +544,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
               // Save button
               ElevatedButton(
-                onPressed: _saveReminder,
+                onPressed: saveReminder,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,

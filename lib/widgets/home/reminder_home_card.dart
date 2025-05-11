@@ -1,18 +1,36 @@
+import 'package:breakly/entities/reminder.dart';
 import 'package:flutter/material.dart';
 
 class ReminderHomeCard extends StatelessWidget {
-  final String time;
-  final String title;
+  final Reminder reminder;
   final IconData icon;
   final Color iconColor;
 
   const ReminderHomeCard({
     super.key,
+    required this.reminder,
     required this.icon,
     required this.iconColor,
-    required this.time,
-    required this.title,
   });
+
+  String _getFormattedTimeUntil() {
+    final now = DateTime.now();
+    final scheduledDate = reminder.scheduledDate;
+
+    if (scheduledDate.isBefore(now)) {
+      return 'Overdue';
+    }
+
+    final difference = scheduledDate.difference(now);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ${difference.inHours % 24}h';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ${difference.inMinutes % 60}m';
+    } else {
+      return '${difference.inMinutes}m';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,17 +53,23 @@ class ReminderHomeCard extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                time,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getFormattedTimeUntil(),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(title, style: theme.textTheme.bodyMedium),
-            ],
+                Text(
+                  reminder.title,
+                  style: theme.textTheme.bodyMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),

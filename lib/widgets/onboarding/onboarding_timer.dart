@@ -4,11 +4,10 @@ import 'dart:async';
 
 class OnboardingTimer extends StatefulWidget {
   final double height;
-
   final double width;
-
   final double strokeWidth;
   final bool withVibration;
+  final DateTime? targetDate;
 
   const OnboardingTimer({
     super.key,
@@ -16,25 +15,40 @@ class OnboardingTimer extends StatefulWidget {
     this.width = 100,
     this.strokeWidth = 6,
     this.withVibration = false,
+    this.targetDate,
   });
 
   @override
   State<OnboardingTimer> createState() => _OnboardingTimerState();
 }
 
-class _OnboardingTimerState extends State<OnboardingTimer> with WidgetsBindingObserver{
+class _OnboardingTimerState extends State<OnboardingTimer>
+    with WidgetsBindingObserver {
   static const int totalSeconds = 119;
   late int secondsLeft;
   Timer? _timer;
   bool isCompleted = false;
   var isVibrationSupported = false;
+  DateTime? _endTime;
 
   @override
   void initState() {
     super.initState();
-    secondsLeft = totalSeconds;
-    _startTimer();
+    WidgetsBinding.instance.addObserver(this);
+    _initializeTimer();
     _checkVibration();
+  }
+
+  void _initializeTimer() {
+    if (widget.targetDate != null) {
+      _endTime = widget.targetDate;
+      final now = DateTime.now();
+      final difference = _endTime!.difference(now);
+      secondsLeft = difference.inSeconds > 0 ? difference.inSeconds : 0;
+    } else {
+      secondsLeft = totalSeconds;
+    }
+    _startTimer();
   }
 
   void _checkVibration() {
@@ -74,23 +88,56 @@ class _OnboardingTimerState extends State<OnboardingTimer> with WidgetsBindingOb
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       setState(() {
         isVibrationSupported = false;
       });
     } else if (state == AppLifecycleState.resumed) {
       _checkVibration();
+      // Recalculate time left if using targetDate
+      if (_endTime != null) {
+        final now = DateTime.now();
+        final difference = _endTime!.difference(now);
+        setState(() {
+          secondsLeft = difference.inSeconds > 0 ? difference.inSeconds : 0;
+        });
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(OnboardingTimer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update timer if targetDate changes
+    if (widget.targetDate != oldWidget.targetDate) {
+      _timer?.cancel();
+      _initializeTimer();
     }
   }
 
   double _getProgress() {
+    if (widget.targetDate != null) {
+      final now = DateTime.now();
+      final total =
+          _endTime!
+              .difference(now.subtract(Duration(seconds: secondsLeft)))
+              .inSeconds;
+      return total > 0 ? 1.0 - (secondsLeft / total) : 1.0;
+    }
     return 1.0 - (secondsLeft / totalSeconds);
   }
 
   String _getTimeString() {
-    final int minutes = secondsLeft ~/ 60;
-    final int seconds = secondsLeft % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+    if (secondsLeft >= 3600) {
+      final int hours = secondsLeft ~/ 3600;
+      final int minutes = (secondsLeft % 3600) ~/ 60;
+      return '$hours:${minutes.toString().padLeft(2, '0')}';
+    } else {
+      final int minutes = secondsLeft ~/ 60;
+      final int seconds = secondsLeft % 60;
+      return '$minutes:${seconds.toString().padLeft(2, '0')}';
+    }
   }
 
   @override
