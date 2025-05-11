@@ -1,8 +1,9 @@
+import 'package:breakly/lib/routes.dart';
 import 'package:breakly/service/auth_api.dart';
 import 'package:breakly/widgets/home/reminder_home_card.dart';
-import 'package:breakly/widgets/navigation/auth_bottom_navigation_bar.dart';
 import 'package:breakly/widgets/onboarding/onboarding_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -40,7 +41,7 @@ class HomeScreen extends StatelessWidget {
               child: IconButton(
                 icon: Icon(Icons.add, color: colorScheme.secondary),
                 onPressed: () {
-                  Navigator.pushNamed(context, '/add-reminder');
+                  context.go(Routes.nestedAddReminder);
                 },
               ),
             ),
@@ -64,7 +65,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: AuthBottomNavigationBar(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),

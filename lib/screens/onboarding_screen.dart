@@ -1,9 +1,11 @@
 import 'package:breakly/lib/onboarding_page_data.dart';
+import 'package:breakly/lib/routes.dart';
 import 'package:breakly/widgets/gradient_circle_border.dart';
 import 'package:breakly/widgets/onboarding/onboarding_indicator.dart';
 import 'package:breakly/widgets/onboarding/onboarding_notification.dart';
 import 'package:breakly/widgets/onboarding/onboarding_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -48,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.ease,
       );
     } else {
-      Navigator.pushReplacementNamed(context, '/authentication');
+      context.goNamed(Routes.login);
     }
   }
 

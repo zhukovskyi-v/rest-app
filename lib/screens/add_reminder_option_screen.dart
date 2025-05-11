@@ -1,15 +1,17 @@
+import 'package:breakly/lib/routes.dart';
+import 'package:breakly/models/reminder.dart';
 import 'package:breakly/models/reminder_type_option.dart';
 import 'package:breakly/widgets/custom_animated_card.dart';
-import 'package:breakly/widgets/navigation/auth_bottom_navigation_bar.dart';
 import 'package:breakly/widgets/reminder/reminder_type_card.dart';
 import 'package:flutter/material.dart';
-import 'package:breakly/models/reminder.dart';
+import 'package:go_router/go_router.dart';
 
 class AddReminderOptionScreen extends StatefulWidget {
   const AddReminderOptionScreen({super.key});
 
   @override
-  State<AddReminderOptionScreen> createState() => _AddReminderOptionScreenState();
+  State<AddReminderOptionScreen> createState() =>
+      _AddReminderOptionScreenState();
 }
 
 class _AddReminderOptionScreenState extends State<AddReminderOptionScreen> {
@@ -39,15 +41,6 @@ class _AddReminderOptionScreenState extends State<AddReminderOptionScreen> {
     ];
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      bottomNavigationBar: AuthBottomNavigationBar(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.surface),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -93,8 +86,7 @@ class _AddReminderOptionScreenState extends State<AddReminderOptionScreen> {
   Widget _buildCustomReminderCard(ThemeData theme) {
     return CustomAnimatedCard(
       onTap: () {
-        // Handle custom reminder creation
-        Navigator.pushNamed(context, '/add-reminder');
+        context.replace(Routes.nestedAddReminder);
       },
       child: Padding(
         padding: const EdgeInsets.all(20.0),
